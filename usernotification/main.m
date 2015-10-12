@@ -79,7 +79,6 @@ int main(int argc, const char * argv[])
     @autoreleasepool {
         if (installNSBundleHook()) {
             NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-            
             fakeBundleIdentifier = [defaults stringForKey:@"identifier"];
             
             NSUserNotificationCenter *nc = [NSUserNotificationCenter defaultUserNotificationCenter];
@@ -88,10 +87,30 @@ int main(int argc, const char * argv[])
             nc.delegate = ncDelegate;
             
             NSUserNotification *note = [[NSUserNotification alloc] init];
-            note.title = [defaults stringForKey:@"title"];
-            note.subtitle = [defaults stringForKey:@"subtitle"];
-            note.informativeText = [defaults stringForKey:@"informativeText"];
-            
+
+            if (argc > 1) {
+                NSMutableDictionary *arguments = [[NSMutableDictionary alloc] initWithCapacity:(argc / 2)];
+                NSString *key = nil;
+                for (int index = 0; index != argc; ++index) {
+                    NSString *argument = [[NSString alloc] initWithCString:argv[index] encoding:NSUTF8StringEncoding];
+                    if (argument != nil) {
+                        if ([argument hasPrefix:@"-"] && argument.length > 1) {
+                            key = [argument substringFromIndex:1];
+                        } else {
+                            if (key != nil) {
+                                arguments[key] = argument;
+                            }
+                        }
+                    }
+                }
+
+                note.title = arguments[@"title"];
+                note.subtitle = arguments[@"subtitle"];
+                note.informativeText = arguments[@"informativeText"];
+            }
+
+
+
             if (!(note.title || note.subtitle || note.informativeText)) {
                 note.title = @"Usage: usernotification";
                 note.informativeText = @"Options: [-identifier <IDENTIFIER>] [-title <TEXT>] [-subtitle TEXT] [-informativeText TEXT]";
